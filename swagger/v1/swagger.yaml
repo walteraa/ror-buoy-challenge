@@ -1,0 +1,210 @@
+---
+openapi: 3.0.1
+info:
+  title: API V1
+  version: v1
+paths:
+  "/api/v1/accommodations":
+    get:
+      summary: List all accommodations
+      tags:
+        - Accommodations
+      responses:
+        "200":
+          description: accommodations listed
+    post:
+      summary: Create a new accommodation
+      tags:
+        - Accommodations
+      parameters: []
+      responses:
+        "201":
+          description: accommodation created
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                price:
+                  type: number
+                location:
+                  type: string
+              required:
+                - name
+                - price
+                - location
+  "/api/v1/accommodations/{id}":
+    get:
+      summary: Get a specific accommodation
+      tags:
+        - Accommodations
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: accommodation found
+        "404":
+          description: accommodation not found
+    patch:
+      summary: Update an accommodation
+      tags:
+        - Accommodations
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: accommodation updated
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                price:
+                  type: number
+                location:
+                  type: string
+    delete:
+      summary: Delete an accommodation
+      tags:
+        - Accommodations
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: accommodation deleted
+  "/api/v1/accommodations/{accommodation_id}/bookings":
+    get:
+      summary: List bookings for a specific accommodation
+      tags:
+        - Bookings
+      parameters:
+        - name: accommodation_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: bookings listed
+    post:
+      summary: Create booking for an accommodation
+      tags:
+        - Bookings
+      parameters:
+        - name: accommodation_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "201":
+          description: booking created
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                guest_name:
+                  type: string
+                start_date:
+                  type: string
+                  format: date
+                end_date:
+                  type: string
+                  format: date
+              required:
+                - guest_name
+                - start_date
+                - end_date
+  "/api/v1/bookings":
+    get:
+      summary: List all bookings
+      tags:
+        - Bookings
+      responses:
+        "200":
+          description: bookings listed
+  "/api/v1/bookings/{id}":
+    get:
+      summary: Get a booking by ID
+      tags:
+        - Bookings
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: booking found
+        "404":
+          description: booking not found
+    patch:
+      summary: Update a booking
+      tags:
+        - Bookings
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: booking updated
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                guest_name:
+                  type: string
+                start_date:
+                  type: string
+                  format: date
+                end_date:
+                  type: string
+                  format: date
+    delete:
+      summary: Delete a booking
+      tags:
+        - Bookings
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: booking deleted
+servers:
+  - url: http://localhost:3000
+    variables:
+      defaultHost:
+        default: http://localhost:3000

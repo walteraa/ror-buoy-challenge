@@ -17,13 +17,33 @@ services:
     environment:
       RAILS_ENV: development
       DATABASE_URL: postgres://postgres:postgres@db:5432/bookings_app_production
+      REDIS_URL: redis://redis:6379/0
     volumes:
       - .:/rails
     ports:
       - "3000:3000"
     depends_on:
       - db
-    command: ./bin/rails server -b 0.0.0.0 -p 3000
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  sidekiq:
+    build: .
+    command: bundle exec sidekiq
+    volumes:
+      - .:/rails
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      RAILS_ENV: development
+    depends_on:
+      - redis
+      - db
+      - web
 
 volumes:
   db_data:
+  redis_data:

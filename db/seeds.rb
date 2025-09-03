@@ -1,4 +1,6 @@
-puts "Seeding data..."
+# frozen_string_literal: true
+
+puts 'Seeding data...'
 
 3.times do |i|
   Accommodation.create!(
@@ -15,14 +17,14 @@ Booking.create!(
   accommodation: accommodation,
   start_date: Date.today + 2,
   end_date: Date.today + 4,
-  guest_name: "João"
+  guest_name: 'João'
 )
 
 Booking.create!(
   accommodation: accommodation,
   start_date: Date.today + 3,
   end_date: Date.today + 6,
-  guest_name: "Maria"
+  guest_name: 'Maria'
 )
 
-puts "Seeding done!"
+puts 'Seeding done!'

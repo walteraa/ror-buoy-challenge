@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class BookingSerializer < ActiveModel::Serializer
   attributes :id, :accommodation_id, :accommodation_name, :start_date, :end_date, :guest_name
 

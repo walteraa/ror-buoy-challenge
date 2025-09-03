@@ -129,3 +129,20 @@ Run both the app and database in containers.
 
 ---
 If something doesn’t work, confirm your Ruby version matches `.ruby-version`, Docker is running, and that the DB container is up (`docker compose ps`).
+
+
+## Solution
+
+To solve this challenge, I was inspired in the approach the top-tier booking products(airbnb, booking.com, etc) use: an async booking system. But in that case a simpler and rails-like way.
+For this, I decided to add an action to create the BookingRequest and then, we have a Sidekiq worker being trigger as a queue, considering the accommodation_id as the unique key.
+
+If everything went fine(e.g.: checks for overlap), we create the actual Booking and change the BookingRequest.status to sucess, otherwise we change the BookingRequest.status to failed.
+
+![System architecture](docs/macro_diagram.png)
+
+
+To reach this, I followed the model architecture below
+
+
+
+![Model architecture](docs/model_diagram.png)

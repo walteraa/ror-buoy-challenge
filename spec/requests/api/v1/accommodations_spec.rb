@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'swagger_helper'
 
 RSpec.describe 'API V1 - Accommodations', type: :request do
@@ -22,7 +24,7 @@ RSpec.describe 'API V1 - Accommodations', type: :request do
           price: { type: :number },
           location: { type: :string }
         },
-        required: ['name', 'price', 'location']
+        required: %w[name price location]
       }
 
       response '201', 'accommodation created' do

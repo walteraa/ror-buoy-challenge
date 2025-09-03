@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'swagger_helper'
 
 RSpec.describe 'API V1 - Bookings', type: :request do
@@ -24,7 +26,7 @@ RSpec.describe 'API V1 - Bookings', type: :request do
           start_date: { type: :string, format: :date },
           end_date: { type: :string, format: :date }
         },
-        required: ['guest_name', 'start_date', 'end_date']
+        required: %w[guest_name start_date end_date]
       }
 
       response '201', 'booking created' do
@@ -62,7 +64,10 @@ RSpec.describe 'API V1 - Bookings', type: :request do
 
       response '200', 'booking found' do
         let(:accommodation) { Accommodation.create!(name: 'Unit Test Acc', price: 100.00, location: 'Street A') }
-        let(:id) { Booking.create!(accommodation: accommodation, guest_name: 'Carl', start_date: Date.today, end_date: Date.today + 1).id }
+        let(:id) do
+          Booking.create!(accommodation: accommodation, guest_name: 'Carl', start_date: Date.today,
+                          end_date: Date.today + 1).id
+        end
         run_test!
       end
 
@@ -87,7 +92,10 @@ RSpec.describe 'API V1 - Bookings', type: :request do
 
       response '200', 'booking updated' do
         let(:accommodation) { Accommodation.create!(name: 'Test', price: 300.00, location: 'downtown') }
-        let(:id) { Booking.create!(accommodation: accommodation, guest_name: 'John', start_date: Date.today, end_date: Date.today + 1).id }
+        let(:id) do
+          Booking.create!(accommodation: accommodation, guest_name: 'John', start_date: Date.today,
+                          end_date: Date.today + 1).id
+        end
         let(:booking) { { guest_name: 'John Smith' } }
         run_test!
       end
@@ -99,7 +107,10 @@ RSpec.describe 'API V1 - Bookings', type: :request do
 
       response '204', 'booking deleted' do
         let(:accommodation) { Accommodation.create!(name: 'Test', price: 300, location: 'downtown') }
-        let(:id) { Booking.create!(accommodation: accommodation, guest_name: 'Mary', start_date: Date.today, end_date: Date.today + 1).id }
+        let(:id) do
+          Booking.create!(accommodation: accommodation, guest_name: 'Mary', start_date: Date.today,
+                          end_date: Date.today + 1).id
+        end
         run_test!
       end
     end

@@ -1,118 +1,84 @@
 # frozen_string_literal: true
 
-require 'swagger_helper'
+require 'rails_helper'
 
-RSpec.describe 'API V1 - Bookings', type: :request do
-  path '/api/v1/accommodations/{accommodation_id}/bookings' do
-    get 'List bookings for a specific accommodation' do
-      tags 'Bookings'
-      produces 'application/json'
-      parameter name: :accommodation_id, in: :path, type: :string
+RSpec.describe 'Api::V1::Bookings', type: :request do
+  let!(:accommodation) { create(:accommodation) }
+  let!(:bookings) { create_list(:booking, 3, accommodation: accommodation) }
+  let(:booking) { bookings.first }
 
-      response '200', 'bookings listed' do
-        let(:accommodation_id) { Accommodation.create!(name: 'Flat 3', price: 150.00, location: 'Gate').id }
-        run_test!
+  describe 'GET /api/v1/accommodations/:accommodation_id/bookings' do
+    it 'returns all bookings for the accommodation with status 200' do
+      get "/api/v1/accommodations/#{accommodation.id}/bookings"
+
+      expect(response).to have_http_status(:ok)
+      body = JSON.parse(response.body)['bookings']
+      expect(body.size).to eq(3)
+      expect(body.first.keys).to include('id', 'accommodation_id', 'start_date', 'end_date', 'guest_name')
+    end
+  end
+
+  describe 'GET /api/v1/bookings/list' do
+    it 'returns all bookings with status 200' do
+      get '/api/v1/bookings'
+
+      expect(response).to have_http_status(:ok)
+      body = JSON.parse(response.body)['bookings']
+      expect(body.size).to eq(3)
+    end
+  end
+
+  describe 'GET /api/v1/bookings/:id' do
+    context 'when booking exists' do
+      it 'returns the booking with status 200' do
+        get "/api/v1/bookings/#{booking.id}"
+
+        expect(response).to have_http_status(:ok)
+        body = JSON.parse(response.body)['booking']
+        expect(body['id']).to eq(booking.id)
       end
     end
 
-    post 'Create booking for an accommodation' do
-      tags 'Bookings'
-      consumes 'application/json'
-      parameter name: :accommodation_id, in: :path, type: :string
-      parameter name: :booking, in: :body, schema: {
-        type: :object,
-        properties: {
-          guest_name: { type: :string },
-          start_date: { type: :string, format: :date },
-          end_date: { type: :string, format: :date }
-        },
-        required: %w[guest_name start_date end_date]
-      }
+    context 'when booking does not exist' do
+      it 'returns 404 not found' do
+        get '/api/v1/bookings/invalid_id'
 
-      response '201', 'booking created' do
-        let(:accommodation_id) { Accommodation.create!(name: 'Booking Acc', price: 500.00, location: 'Miami').id }
-        let(:booking) do
-          {
-            guest_name: 'Ana',
-            start_date: Date.today.to_s,
-            end_date: (Date.today + 2).to_s,
-            accommodation_id: accommodation_id
-          }
-        end
-
-        run_test!
+        expect(response).to have_http_status(:not_found)
       end
     end
   end
 
-  path '/api/v1/bookings' do
-    get 'List all bookings' do
-      tags 'Bookings'
-      produces 'application/json'
+  describe 'PATCH /api/v1/bookings/:id' do
+    let(:valid_params) { { booking: { guest_name: 'Jane Doe' } } }
 
-      response '200', 'bookings listed' do
-        run_test!
+    context 'with valid params' do
+      it 'updates the booking and returns status 200' do
+        patch "/api/v1/bookings/#{booking.id}", params: valid_params
+
+        expect(response).to have_http_status(:ok)
+        body = JSON.parse(response.body)['booking']
+        expect(body['guest_name']).to eq('Jane Doe')
+      end
+    end
+
+    context 'with invalid params' do
+      it 'returns 422 unprocessable entity' do
+        patch "/api/v1/bookings/#{booking.id}", params: { booking: { start_date: nil } }
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        body = JSON.parse(response.body)
+        expect(body).to be_a(Hash)
       end
     end
   end
 
-  path '/api/v1/bookings/{id}' do
-    get 'Get a booking by ID' do
-      tags 'Bookings'
-      produces 'application/json'
-      parameter name: :id, in: :path, type: :string
+  describe 'DELETE /api/v1/bookings/:id' do
+    it 'destroys the booking and returns 204 no content' do
+      expect do
+        delete "/api/v1/bookings/#{booking.id}"
+      end.to change(Booking, :count).by(-1)
 
-      response '200', 'booking found' do
-        let(:accommodation) { Accommodation.create!(name: 'Unit Test Acc', price: 100.00, location: 'Street A') }
-        let(:id) do
-          Booking.create!(accommodation: accommodation, guest_name: 'Carl', start_date: Date.today,
-                          end_date: Date.today + 1).id
-        end
-        run_test!
-      end
-
-      response '404', 'booking not found' do
-        let(:id) { 'invalid' }
-        run_test!
-      end
-    end
-
-    patch 'Update a booking' do
-      tags 'Bookings'
-      consumes 'application/json'
-      parameter name: :id, in: :path, type: :string
-      parameter name: :booking, in: :body, schema: {
-        type: :object,
-        properties: {
-          guest_name: { type: :string },
-          start_date: { type: :string, format: :date },
-          end_date: { type: :string, format: :date }
-        }
-      }
-
-      response '200', 'booking updated' do
-        let(:accommodation) { Accommodation.create!(name: 'Test', price: 300.00, location: 'downtown') }
-        let(:id) do
-          Booking.create!(accommodation: accommodation, guest_name: 'John', start_date: Date.today,
-                          end_date: Date.today + 1).id
-        end
-        let(:booking) { { guest_name: 'John Smith' } }
-        run_test!
-      end
-    end
-
-    delete 'Delete a booking' do
-      tags 'Bookings'
-      parameter name: :id, in: :path, type: :string
-
-      response '204', 'booking deleted' do
-        let(:accommodation) { Accommodation.create!(name: 'Test', price: 300, location: 'downtown') }
-        let(:id) do
-          Booking.create!(accommodation: accommodation, guest_name: 'Mary', start_date: Date.today,
-                          end_date: Date.today + 1).id
-        end
-        run_test!
-      end
+      expect(response).to have_http_status(:no_content)
     end
   end
 end

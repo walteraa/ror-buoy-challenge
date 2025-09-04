@@ -12,8 +12,9 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 20_250_902_205_331) do
+ActiveRecord::Schema[7.1].define(version: 20_250_904_045_517) do
   # These are extensions that must be enabled in order to support this database
+  enable_extension 'btree_gist'
   enable_extension 'plpgsql'
 
   create_table 'accommodations', force: :cascade do |t|
@@ -51,6 +52,20 @@ ActiveRecord::Schema[7.1].define(version: 20_250_902_205_331) do
     t.index %w[hotel_id amenity_id], name: 'index_amenities_hotels_on_hotel_id_and_amenity_id'
   end
 
+  create_table 'booking_requests', force: :cascade do |t|
+    t.json 'params', default: {}, null: false
+    t.string 'status', default: 'pending', null: false
+    t.datetime 'requested_at', null: false
+    t.datetime 'performed_at'
+    t.string 'failure_reason'
+    t.bigint 'booking_id'
+    t.bigint 'accommodation_id', null: false
+    t.datetime 'created_at', null: false
+    t.datetime 'updated_at', null: false
+    t.index ['accommodation_id'], name: 'index_booking_requests_on_accommodation_id'
+    t.index ['booking_id'], name: 'index_booking_requests_on_booking_id'
+  end
+
   create_table 'bookings', force: :cascade do |t|
     t.bigint 'accommodation_id', null: false
     t.date 'start_date'
@@ -59,6 +74,8 @@ ActiveRecord::Schema[7.1].define(version: 20_250_902_205_331) do
     t.datetime 'created_at', null: false
     t.datetime 'updated_at', null: false
     t.index ['accommodation_id'], name: 'index_bookings_on_accommodation_id'
+    t.exclusion_constraint "accommodation_id WITH =, daterange(start_date, end_date, '[]'::text) WITH &&",
+                           using: :gist, name: 'bookings_no_overlap'
   end
 
   create_table 'hotels', force: :cascade do |t|
@@ -71,5 +88,7 @@ ActiveRecord::Schema[7.1].define(version: 20_250_902_205_331) do
   add_foreign_key 'accommodations', 'hotels'
   add_foreign_key 'amenities_hotels', 'amenities'
   add_foreign_key 'amenities_hotels', 'hotels'
+  add_foreign_key 'booking_requests', 'accommodations'
+  add_foreign_key 'booking_requests', 'bookings'
   add_foreign_key 'bookings', 'accommodations'
 end

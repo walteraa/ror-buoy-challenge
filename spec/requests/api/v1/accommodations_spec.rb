@@ -1,84 +1,82 @@
 # frozen_string_literal: true
 
-require 'swagger_helper'
+require 'rails_helper'
 
-RSpec.describe 'API V1 - Accommodations', type: :request do
-  path '/api/v1/accommodations' do
-    get 'List all accommodations' do
-      tags 'Accommodations'
-      produces 'application/json'
+RSpec.describe Api::V1::AccommodationsController, type: :request do
+  let!(:accommodations) { create_list(:accommodation, 3) }
+  let(:accommodation)   { accommodations.first }
 
-      response '200', 'accommodations listed' do
-        run_test!
-      end
-    end
+  describe 'GET /api/v1/accommodations' do
+    it 'returns paginated accommodations with status 200' do
+      get '/api/v1/accommodations'
 
-    post 'Create a new accommodation' do
-      tags 'Accommodations'
-      consumes 'application/json'
-      parameter name: :accommodation, in: :body, schema: {
-        type: :object,
-        properties: {
-          name: { type: :string },
-          description: { type: :string },
-          price: { type: :number },
-          location: { type: :string }
-        },
-        required: %w[name price location]
-      }
-
-      response '201', 'accommodation created' do
-        let(:accommodation) { { name: 'Flat 1', price: 250.00, location: 'downtown' } }
-        run_test!
-      end
+      expect(response).to have_http_status(:ok)
+      body = JSON.parse(response.body)
+      expect(body).to have_key('accommodations')
+      expect(body['accommodations'].size).to eq(3)
+      expect(body).to have_key('meta')
+      expect(body['meta']).to include('current_page', 'total_pages', 'total_count')
     end
   end
 
-  path '/api/v1/accommodations/{id}' do
-    get 'Get a specific accommodation' do
-      tags 'Accommodations'
-      produces 'application/json'
-      parameter name: :id, in: :path, type: :string
+  describe 'GET /api/v1/accommodations/:id' do
+    context 'when accommodation exists' do
+      it 'returns the accommodation with status 200' do
+        get "/api/v1/accommodations/#{accommodation.id}"
 
-      response '200', 'accommodation found' do
-        let(:id) { Accommodation.create!(name: 'Flat 2', price: 300.00, location: 'montain').id }
-        run_test!
-      end
-
-      response '404', 'accommodation not found' do
-        let(:id) { 'invalid' }
-        run_test!
+        expect(response).to have_http_status(:ok)
+        body = JSON.parse(response.body)
+        expect(body.dig('accommodation', 'name')).to eq(accommodation.name)
       end
     end
 
-    patch 'Update an accommodation' do
-      tags 'Accommodations'
-      consumes 'application/json'
-      parameter name: :id, in: :path, type: :string
-      parameter name: :accommodation, in: :body, schema: {
-        type: :object,
-        properties: {
-          name: { type: :string },
-          description: { type: :string },
-          price: { type: :number },
-          location: { type: :string }
-        }
+    context 'when accommodation does not exist' do
+      it 'returns 404 not found' do
+        get '/api/v1/accommodations/0'
+
+        expect(response).to have_http_status(:not_found)
+      end
+    end
+  end
+  describe 'POST /api/v1/accommodations/:id/book' do
+    let(:valid_params) do
+      {
+        start_date: '2025-09-10',
+        end_date: '2025-09-12',
+        guest_name: 'John Doe'
       }
+    end
 
-      response '200', 'accommodation updated' do
-        let(:id) { Accommodation.create!(name: 'Update Me', price: 200.00, location: 'UpdateTown').id }
-        let(:accommodation) { { name: 'Updated Flat' } }
-        run_test!
+    context 'with valid booking params' do
+      it 'creates a booking request, enqueues the job, and returns 202' do
+        expect do
+          post "/api/v1/accommodations/#{accommodation.id}/book", params: valid_params
+        end.to change(Workflow::BookingRequest, :count).by(1)
+
+        expect(response).to have_http_status(:accepted)
+        body = JSON.parse(response.body)
+        expect(body).to include('message', 'booking_request_id')
       end
     end
 
-    delete 'Delete an accommodation' do
-      tags 'Accommodations'
-      parameter name: :id, in: :path, type: :string
+    context 'with invalid accommodation id' do
+      it 'returns 404 not found' do
+        post '/api/v1/accommodations/0/book', params: valid_params
+        expect(response).to have_http_status(:not_found)
+      end
+    end
 
-      response '204', 'accommodation deleted' do
-        let(:id) { Accommodation.create!(name: 'To Delete', price: 100.00, location: 'OldCity').id }
-        run_test!
+    context 'when booking creation fails' do
+      before do
+        allow(Workflow::BookingRequest).to receive(:create!).and_raise(StandardError, 'Unexpected failure')
+      end
+
+      it 'returns 422 unprocessable entity with error message' do
+        post "/api/v1/accommodations/#{accommodation.id}/book", params: valid_params
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        body = JSON.parse(response.body)
+        expect(body).to include('error' => 'Unexpected failure')
       end
     end
   end

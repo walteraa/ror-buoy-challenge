@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Workflow
   class BookingRequest < ApplicationRecord
     belongs_to :accommodation

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Workflow
   class BookingCreationJob
     include Sidekiq::Worker
@@ -32,9 +34,9 @@ module Workflow
           guest_name: guest_name
         )
         booking_request.mark_success(booking)
-      rescue ActiveRecord::RecordNotUnique => e
+      rescue ActiveRecord::RecordNotUnique
         booking_request.mark_failed('Constraint violation: booking overlap')
-      rescue => e
+      rescue StandardError => e
         booking_request.mark_failed("Unknown error: #{e.message}")
       end
     end

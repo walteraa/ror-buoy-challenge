@@ -8,6 +8,7 @@ puts 'Seeding data...'
     description: "Sample accommodation #{i + 1}",
     price: 150.00 + i * 20,
     location: "Region #{i + 1}"
+    type: "apartment"
   )
 end
 
@@ -22,8 +23,8 @@ Booking.create!(
 
 Booking.create!(
   accommodation: accommodation,
-  start_date: Date.today + 3,
-  end_date: Date.today + 6,
+  start_date: Date.today + 5,
+  end_date: Date.today + 8,
   guest_name: 'Maria'
 )
 

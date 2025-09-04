@@ -11,6 +11,7 @@ abort('The Rails environment is running in production mode!') if Rails.env.produ
 # return unless Rails.env.test?
 require 'rspec/rails'
 # Add additional requires below this line. Rails is not loaded until this point!
+require 'simplecov'
 
 # Requires supporting ruby files with custom matchers and macros, etc, in
 # spec/support/ and its subdirectories. Files matching `spec/**/*_spec.rb` are
@@ -76,4 +77,13 @@ Shoulda::Matchers.configure do |config|
     with.test_framework :rspec
     with.library :rails
   end
+end
+
+SimpleCov.start 'rails' do
+  add_filter '/spec/'
+  add_filter '/config/'
+  add_filter 'app/channels/application_cable/channel.rb'
+  add_filter 'app/channels/application_cable/connection.rb'
+  add_filter 'app/jobs/application_job.rb'
+  add_filter 'app/mailers/application_mailer.rb'
 end

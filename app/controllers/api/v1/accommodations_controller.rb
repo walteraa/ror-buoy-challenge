@@ -17,14 +17,14 @@ module Api
       def book
         booking_params = params.permit(:start_date, :end_date, :guest_name)
 
-        booking_request = Workflow::BookingRequest.create!(
+        booking_request = ::Workflow::BookingRequest.create!(
           accommodation_id: params[:id],
           params: booking_params.to_h,
           status: 'pending',
           requested_at: Time.current
         )
 
-        Workflow::BookingCreationJob.perform_async(booking_request.id, booking_request.accommodation_id)
+        ::Workflow::BookingCreationJob.perform_async(booking_request.id, booking_request.accommodation_id)
 
         render json: { message: 'Booking request created', booking_request_id: booking_request.id }, status: :accepted
       rescue StandardError => e
@@ -37,14 +37,6 @@ module Api
         @accommodation = Accommodation.find(params[:id])
       rescue ActiveRecord::RecordNotFound
         render json: {}, status: :not_found
-      end
-
-      def pagination_meta(object)
-        {
-          current_page: object.current_page,
-          total_pages: object.total_pages,
-          total_count: object.total_count
-        }
       end
     end
   end

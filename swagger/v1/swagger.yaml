@@ -491,6 +491,42 @@ paths:
       responses:
         '204':
           description: hotel deleted
+  "/api/v1/workflow/booking_requests":
+    get:
+      summary: List booking requests
+      tags:
+      - Workflow BookingRequests
+      parameters:
+      - name: page
+        in: query
+        description: Page number
+        schema:
+          type: integer
+      - name: per_page
+        in: query
+        description: Items per page
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: booking requests listed
+  "/api/v1/workflow/booking_requests/{id}":
+    get:
+      summary: Retrieve a single booking request
+      tags:
+      - Workflow BookingRequests
+      parameters:
+      - name: id
+        in: path
+        description: BookingRequest ID
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: booking request found
+        '404':
+          description: booking request not found
 servers:
 - url: https://{defaultHost}
   variables:

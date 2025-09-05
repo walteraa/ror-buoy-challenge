@@ -28,6 +28,9 @@ Rails.application.routes.draw do
       resources :apartments
 
       resources :bookings, only: %i[show update destroy]
+      namespace :workflow do
+        resources :booking_requests, only: %i[index show]
+      end
       get '/bookings', to: 'bookings#list'
     end
   end

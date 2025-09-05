@@ -17,4 +17,21 @@ FactoryBot.define do
       end
     end
   end
+  factory :workflow_booking_request, class: 'Workflow::BookingRequest' do
+    association :accommodation
+    status { 'pending' }
+    params { { guest_name: 'John Doe', start_date: Date.today.to_s, end_date: (Date.today + 3).to_s } }
+    requested_at { Time.current }
+
+    trait :success do
+      status { 'success' }
+      performed_at { Time.current }
+    end
+
+    trait :failed do
+      status { 'failed' }
+      failure_reason { 'Some failure reason' }
+      performed_at { Time.current }
+    end
+  end
 end

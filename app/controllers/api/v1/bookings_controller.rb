@@ -6,8 +6,8 @@ module Api
       before_action :set_booking, only: %i[show update destroy]
 
       def index
-        bookings = Booking.where(accommodation_id: params[:accommodation_id])
-        render json: bookings
+        bookings = Booking.where(accommodation_id: params[:accommodation_id]).page(params[:page]).per(params[:per_page] || 10)
+        render json: bookings, each_serializer: ::BookingSerializer, meta: pagination_meta(bookings)
       end
 
       def list

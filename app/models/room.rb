@@ -5,4 +5,7 @@ class Room < Accommodation
   belongs_to :hotel
 
   validates :hotel, presence: true
+  validates :name, presence: true
+  validates :description, presence: true
+  validates :location, presence: true
 end

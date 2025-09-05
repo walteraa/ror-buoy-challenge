@@ -1,119 +1,137 @@
 # frozen_string_literal: true
 
-require 'rails_helper'
+require 'swagger_helper'
 
-RSpec.describe Api::V1::HotelsController, type: :request do
-  let!(:hotels) { create_list(:hotel, 3) }
-  let(:hotel)   { hotels.first }
+RSpec.describe 'Api::V1::Hotels', type: :request do
+  path '/api/v1/hotels' do
+    get 'Retrieves paginated hotels' do
+      tags 'Hotels'
+      produces 'application/json'
 
-  describe 'GET /api/v1/hotels' do
-    it 'returns paginated hotels with status 200' do
-      get '/api/v1/hotels'
-
-      expect(response).to have_http_status(:ok)
-
-      body = JSON.parse(response.body)
-      expect(body).to have_key('hotels')
-      expect(body['hotels'].size).to eq(3)
-      expect(body).to have_key('meta')
-      expect(body['meta']).to include('current_page', 'total_pages', 'total_count')
-    end
-  end
-
-  describe 'GET /api/v1/hotels/:id' do
-    context 'when hotel exists' do
-      it 'returns the hotel with status 200' do
-        get "/api/v1/hotels/#{hotel.id}"
-
-        expect(response).to have_http_status(:ok)
-        body = JSON.parse(response.body)
-        expect(body.dig('hotel', 'name')).to eq(hotel.name)
+      response '200', 'hotels found' do
+        let!(:hotels) { create_list(:hotel, 3) }
+        run_test! do |response|
+          body = JSON.parse(response.body)
+          expect(body).to have_key('hotels')
+          expect(body['hotels'].size).to eq(3)
+          expect(body).to have_key('meta')
+          expect(body['meta']).to include('current_page', 'total_pages', 'total_count')
+        end
       end
     end
 
-    context 'when hotel does not exist' do
-      it 'returns 404 not found' do
-        get '/api/v1/hotels/0'
-
-        expect(response).to have_http_status(:not_found)
-      end
-    end
-  end
-
-  describe 'POST /api/v1/hotels' do
-    let(:valid_params) do
-      {
-        hotel: {
-          name: 'New Hotel',
-          address: '123 Street',
-          amenities_attributes: [{ name: 'Pool' }]
+    post 'Creates a hotel' do
+      tags 'Hotels'
+      consumes 'application/json'
+      produces 'application/json'
+      parameter name: :hotel, in: :body, schema: {
+        type: :object,
+        properties: {
+          hotel: {
+            type: :object,
+            properties: {
+              name: { type: :string },
+              address: { type: :string },
+              amenities_attributes: {
+                type: :array,
+                items: { type: :object, properties: { name: { type: :string } } }
+              }
+            },
+            required: %w[name address]
+          }
         }
       }
+
+      response '201', 'hotel created' do
+        let(:hotel) do
+          { hotel: { name: 'New Hotel', address: '123 Street', amenities_attributes: [{ name: 'Pool' }] } }
+        end
+        run_test! do |response|
+          body = JSON.parse(response.body)
+          expect(body.dig('hotel', 'name')).to eq('New Hotel')
+        end
+      end
+
+      response '422', 'unprocessable entity' do
+        let(:hotel) { { hotel: { name: '', address: '' } } }
+        run_test! do |response|
+          body = JSON.parse(response.body)
+          expect(body).to have_key('errors')
+        end
+      end
+    end
+  end
+
+  path '/api/v1/hotels/{id}' do
+    parameter name: :id, in: :path, type: :integer
+
+    get 'Retrieves a hotel' do
+      tags 'Hotels'
+      produces 'application/json'
+
+      response '200', 'hotel found' do
+        let!(:hotel_record) { create(:hotel) }
+        let(:id) { hotel_record.id }
+        run_test! do |response|
+          body = JSON.parse(response.body)
+          expect(body.dig('hotel', 'name')).to eq(hotel_record.name)
+        end
+      end
+
+      response '404', 'hotel not found' do
+        let(:id) { 0 }
+        run_test!
+      end
     end
 
-    let(:invalid_params) do
-      {
-        hotel: {
-          name: '',
-          address: ''
+    patch 'Updates a hotel' do
+      tags 'Hotels'
+      consumes 'application/json'
+      produces 'application/json'
+      parameter name: :hotel, in: :body, schema: {
+        type: :object,
+        properties: {
+          hotel: {
+            type: :object,
+            properties: {
+              name: { type: :string },
+              address: { type: :string }
+            }
+          }
         }
       }
-    end
 
-    context 'with valid params' do
-      it 'creates a hotel and returns status 201' do
-        expect do
-          post '/api/v1/hotels', params: valid_params
-        end.to change(Hotel, :count).by(1)
+      response '200', 'hotel updated' do
+        let!(:hotel_record) { create(:hotel) }
+        let(:id) { hotel_record.id }
+        let(:hotel) { { hotel: { name: 'Updated Name' } } }
+        run_test! do
+          expect(hotel_record.reload.name).to eq('Updated Name')
+        end
+      end
 
-        expect(response).to have_http_status(:created)
-        body = JSON.parse(response.body)
-        expect(body.dig('hotel', 'name')).to eq('New Hotel')
+      response '422', 'unprocessable entity' do
+        let!(:hotel_record) { create(:hotel) }
+        let(:id) { hotel_record.id }
+        let(:hotel) { { hotel: { name: '' } } }
+        run_test! do |response|
+          body = JSON.parse(response.body)
+          expect(body).to have_key('errors')
+        end
       end
     end
 
-    context 'with invalid params' do
-      it 'returns 422 unprocessable entity' do
-        post '/api/v1/hotels', params: invalid_params
+    delete 'Deletes a hotel' do
+      tags 'Hotels'
+      produces 'application/json'
 
-        expect(response).to have_http_status(:unprocessable_entity)
-        body = JSON.parse(response.body)
-        expect(body).to have_key('errors')
+      response '204', 'hotel deleted' do
+        let!(:hotel_record) { create(:hotel) }
+        let(:id) { hotel_record.id }
+        run_test! do
+          expect { Hotel.find(hotel_record.id) }.to raise_error(ActiveRecord::RecordNotFound)
+        end
       end
-    end
-  end
-
-  describe 'PATCH /api/v1/hotels/:id' do
-    let(:valid_update) { { hotel: { name: 'Updated Name' } } }
-    let(:invalid_update) { { hotel: { name: '' } } }
-
-    context 'with valid params' do
-      it 'updates the hotel and returns status 200' do
-        patch "/api/v1/hotels/#{hotel.id}", params: valid_update
-
-        expect(response).to have_http_status(:ok)
-        expect(hotel.reload.name).to eq('Updated Name')
-      end
-    end
-
-    context 'with invalid params' do
-      it 'returns 422 unprocessable entity' do
-        patch "/api/v1/hotels/#{hotel.id}", params: invalid_update
-
-        expect(response).to have_http_status(:unprocessable_entity)
-        body = JSON.parse(response.body)
-        expect(body).to have_key('errors')
-      end
-    end
-  end
-
-  describe 'DELETE /api/v1/hotels/:id' do
-    it 'destroys the hotel and returns 204' do
-      expect do
-        delete "/api/v1/hotels/#{hotel.id}"
-      end.to change(Hotel, :count).by(-1)
-
-      expect(response).to have_http_status(:no_content)
     end
   end
 end

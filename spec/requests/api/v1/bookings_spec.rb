@@ -1,84 +1,120 @@
 # frozen_string_literal: true
 
-require 'rails_helper'
+require 'swagger_helper'
 
 RSpec.describe 'Api::V1::Bookings', type: :request do
   let!(:accommodation) { create(:accommodation) }
   let!(:bookings) { create_list(:booking, 3, accommodation: accommodation) }
-  let(:booking) { bookings.first }
+  let(:existing_booking) { bookings.first }
 
-  describe 'GET /api/v1/accommodations/:accommodation_id/bookings' do
-    it 'returns all bookings for the accommodation with status 200' do
-      get "/api/v1/accommodations/#{accommodation.id}/bookings"
+  path '/api/v1/accommodations/{accommodation_id}/bookings' do
+    parameter name: :accommodation_id, in: :path, type: :integer, description: 'Accommodation ID'
 
-      expect(response).to have_http_status(:ok)
-      body = JSON.parse(response.body)['bookings']
-      expect(body.size).to eq(3)
-      expect(body.first.keys).to include('id', 'accommodation_id', 'start_date', 'end_date', 'guest_name')
-    end
-  end
+    get 'List all bookings for an accommodation' do
+      tags 'Bookings'
+      produces 'application/json'
 
-  describe 'GET /api/v1/bookings/list' do
-    it 'returns all bookings with status 200' do
-      get '/api/v1/bookings'
+      response '200', 'bookings found' do
+        let(:accommodation_id) { accommodation.id }
 
-      expect(response).to have_http_status(:ok)
-      body = JSON.parse(response.body)['bookings']
-      expect(body.size).to eq(3)
-    end
-  end
-
-  describe 'GET /api/v1/bookings/:id' do
-    context 'when booking exists' do
-      it 'returns the booking with status 200' do
-        get "/api/v1/bookings/#{booking.id}"
-
-        expect(response).to have_http_status(:ok)
-        body = JSON.parse(response.body)['booking']
-        expect(body['id']).to eq(booking.id)
-      end
-    end
-
-    context 'when booking does not exist' do
-      it 'returns 404 not found' do
-        get '/api/v1/bookings/invalid_id'
-
-        expect(response).to have_http_status(:not_found)
+        run_test! do
+          body = JSON.parse(response.body)['bookings']
+          expect(body.size).to eq(3)
+          expect(body.first.keys).to include('id', 'accommodation_id', 'start_date', 'end_date', 'guest_name')
+        end
       end
     end
   end
 
-  describe 'PATCH /api/v1/bookings/:id' do
-    let(:valid_params) { { booking: { guest_name: 'Jane Doe' } } }
+  path '/api/v1/bookings' do
+    get 'List all bookings' do
+      tags 'Bookings'
+      produces 'application/json'
 
-    context 'with valid params' do
-      it 'updates the booking and returns status 200' do
-        patch "/api/v1/bookings/#{booking.id}", params: valid_params
-
-        expect(response).to have_http_status(:ok)
-        body = JSON.parse(response.body)['booking']
-        expect(body['guest_name']).to eq('Jane Doe')
-      end
-    end
-
-    context 'with invalid params' do
-      it 'returns 422 unprocessable entity' do
-        patch "/api/v1/bookings/#{booking.id}", params: { booking: { start_date: nil } }
-
-        expect(response).to have_http_status(:unprocessable_entity)
-        body = JSON.parse(response.body)
-        expect(body).to be_a(Hash)
+      response '200', 'all bookings returned' do
+        run_test! do
+          body = JSON.parse(response.body)['bookings']
+          expect(body.size).to eq(3)
+        end
       end
     end
   end
 
-  describe 'DELETE /api/v1/bookings/:id' do
-    it 'destroys the booking and returns 204 no content' do
-      expect do
-        delete "/api/v1/bookings/#{booking.id}"
-      end.to change(Booking, :count).by(-1)
+  path '/api/v1/bookings/{id}' do
+    parameter name: :id, in: :path, type: :integer, description: 'Booking ID'
 
-      expect(response).to have_http_status(:no_content)
+    get 'Retrieve a booking' do
+      tags 'Bookings'
+      produces 'application/json'
+
+      response '200', 'booking found' do
+        let(:id) { existing_booking.id }
+
+        run_test! do
+          body = JSON.parse(response.body)['booking']
+          expect(body['id']).to eq(existing_booking.id)
+        end
+      end
+
+      response '404', 'booking not found' do
+        let(:id) { 0 }
+        run_test!
+      end
+    end
+
+    patch 'Update a booking' do
+      tags 'Bookings'
+      consumes 'application/json'
+      produces 'application/json'
+
+      parameter name: :booking, in: :body, schema: {
+        type: :object,
+        properties: {
+          booking: {
+            type: :object,
+            properties: {
+              guest_name: { type: :string },
+              start_date: { type: :string, format: 'date' },
+              end_date: { type: :string, format: 'date' }
+            },
+            required: ['guest_name']
+          }
+        },
+        required: ['booking']
+      }
+
+      response '200', 'booking updated' do
+        let(:id) { existing_booking.id }
+        let(:booking) { { booking: { guest_name: 'Jane Doe' } } }
+
+        run_test! do
+          expect(existing_booking.reload.guest_name).to eq('Jane Doe')
+        end
+      end
+
+      response '422', 'invalid request' do
+        let(:id) { existing_booking.id }
+        let(:booking) { { booking: { start_date: nil } } }
+        run_test!
+      end
+    end
+
+    delete 'Delete a booking' do
+      tags 'Bookings'
+      produces 'application/json'
+
+      response '204', 'booking deleted' do
+        let(:id) { existing_booking.id }
+
+        run_test! do
+          expect(Booking.exists?(id)).to be_falsey
+        end
+      end
+
+      response '404', 'booking not found' do
+        let(:id) { 0 }
+        run_test!
+      end
     end
   end
 end

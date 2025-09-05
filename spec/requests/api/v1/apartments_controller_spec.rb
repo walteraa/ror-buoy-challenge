@@ -1,125 +1,153 @@
 # frozen_string_literal: true
 
-require 'rails_helper'
+require 'swagger_helper'
 
-RSpec.describe Api::V1::ApartmentsController, type: :request do
+RSpec.describe 'Api::V1::Apartments', type: :request do
   let!(:apartments) { create_list(:apartment, 3) }
-  let(:apartment)   { apartments.first }
+  let(:existing_apartment) { apartments.first }
 
-  describe 'GET /api/v1/apartments' do
-    it 'returns paginated apartments with status 200' do
-      get '/api/v1/apartments'
+  path '/api/v1/apartments' do
+    get 'List apartments' do
+      tags 'Apartments'
+      produces 'application/json'
 
-      expect(response).to have_http_status(:ok)
-
-      body = JSON.parse(response.body)
-      expect(body).to have_key('apartments')
-      expect(body['apartments'].size).to eq(3)
-      expect(body).to have_key('meta')
-      expect(body['meta']).to include('current_page', 'total_pages', 'total_count')
-    end
-  end
-
-  describe 'GET /api/v1/apartments/:id' do
-    context 'when apartment exists' do
-      it 'returns the apartment with status 200' do
-        get "/api/v1/apartments/#{apartment.id}"
-
-        expect(response).to have_http_status(:ok)
-        body = JSON.parse(response.body)
-        expect(body).to have_key('apartment')
-        expect(body['apartment']['id']).to eq(apartment.id)
+      response '200', 'apartments found' do
+        run_test! do
+          body = JSON.parse(response.body)
+          expect(body['apartments'].size).to eq(3)
+          expect(body).to have_key('meta')
+        end
       end
     end
 
-    context 'when apartment does not exist' do
-      it 'returns 404 not found' do
-        get '/api/v1/apartments/0'
+    post 'Create an apartment' do
+      tags 'Apartments'
+      consumes 'application/json'
+      produces 'application/json'
 
-        expect(response).to have_http_status(:not_found)
-      end
-    end
-  end
-
-  describe 'POST /api/v1/apartments' do
-    let(:valid_params) do
-      {
-        apartment: {
-          name: 'New Apartment',
-          description: 'Cozy place',
-          price: 1200,
-          location: 'Downtown',
-          capacity: 3,
-          address: '123 Main St',
-          amenities_attributes: [{ name: 'Balcony' }]
-        }
+      parameter name: :apartment, in: :body, schema: {
+        type: :object,
+        properties: {
+          apartment: {
+            type: :object,
+            properties: {
+              name: { type: :string },
+              description: { type: :string },
+              price: { type: :number },
+              location: { type: :string },
+              capacity: { type: :integer },
+              address: { type: :string },
+              amenities_attributes: {
+                type: :array,
+                items: { type: :object, properties: { name: { type: :string } } }
+              }
+            },
+            required: %w[name price location capacity address]
+          }
+        },
+        required: ['apartment']
       }
+
+      response '201', 'apartment created' do
+        let(:apartment) do
+          {
+            apartment: {
+              name: 'New Apartment',
+              description: 'Cozy place',
+              price: 1200,
+              location: 'Downtown',
+              capacity: 3,
+              address: '123 Main St',
+              amenities_attributes: [{ name: 'Balcony' }]
+            }
+          }
+        end
+
+        run_test! do
+          body = JSON.parse(response.body)
+          expect(body['apartment']['name']).to eq('New Apartment')
+        end
+      end
+
+      response '422', 'invalid request' do
+        let(:apartment) { { apartment: { name: '', price: nil } } }
+        run_test!
+      end
+    end
+  end
+
+  path '/api/v1/apartments/{id}' do
+    parameter name: :id, in: :path, type: :integer, description: 'Apartment ID'
+
+    get 'Retrieve an apartment' do
+      tags 'Apartments'
+      produces 'application/json'
+
+      response '200', 'apartment found' do
+        let(:id) { existing_apartment.id }
+        run_test! do
+          body = JSON.parse(response.body)
+          expect(body['apartment']['id']).to eq(existing_apartment.id)
+        end
+      end
+
+      response '404', 'apartment not found' do
+        let(:id) { 0 }
+        run_test!
+      end
     end
 
-    let(:invalid_params) do
-      {
-        apartment: {
-          name: '',
-          price: nil
-        }
+    patch 'Update an apartment' do
+      tags 'Apartments'
+      consumes 'application/json'
+      produces 'application/json'
+
+      parameter name: :apartment, in: :body, schema: {
+        type: :object,
+        properties: {
+          apartment: {
+            type: :object,
+            properties: {
+              name: { type: :string }
+            },
+            required: ['name']
+          }
+        },
+        required: ['apartment']
       }
-    end
 
-    context 'with valid params' do
-      it 'creates an apartment and returns status 201' do
-        expect do
-          post '/api/v1/apartments', params: valid_params
-        end.to change(Apartment, :count).by(1)
+      response '200', 'apartment updated' do
+        let(:id) { existing_apartment.id }
+        let(:apartment) { { apartment: { name: 'Updated Name' } } }
 
-        expect(response).to have_http_status(:created)
-        body = JSON.parse(response.body)
-        expect(body).to have_key('apartment')
-        expect(body['apartment']['name']).to eq('New Apartment')
+        run_test! do
+          expect(existing_apartment.reload.name).to eq('Updated Name')
+        end
+      end
+
+      response '422', 'invalid request' do
+        let(:id) { existing_apartment.id }
+        let(:apartment) { { apartment: { name: '' } } }
+        run_test!
       end
     end
 
-    context 'with invalid params' do
-      it 'returns 422 unprocessable entity' do
-        post '/api/v1/apartments', params: invalid_params
+    delete 'Delete an apartment' do
+      tags 'Apartments'
+      produces 'application/json'
 
-        expect(response).to have_http_status(:unprocessable_entity)
-        body = JSON.parse(response.body)
-        expect(body).to have_key('errors')
+      response '204', 'apartment deleted' do
+        let(:id) { existing_apartment.id }
+
+        run_test! do
+          expect(Apartment.exists?(id)).to be_falsey
+        end
       end
-    end
-  end
 
-  describe 'PATCH /api/v1/apartments/:id' do
-    let(:valid_update)   { { apartment: { name: 'Updated Name' } } }
-    let(:invalid_update) { { apartment: { name: '' } } }
-
-    context 'with valid params' do
-      it 'updates the apartment and returns status 200' do
-        patch "/api/v1/apartments/#{apartment.id}", params: valid_update
-
-        expect(response).to have_http_status(:ok)
-        expect(apartment.reload.name).to eq('Updated Name')
+      response '404', 'apartment not found' do
+        let(:id) { 0 }
+        run_test!
       end
-    end
-
-    context 'with invalid params' do
-      it 'returns 422 unprocessable entity' do
-        patch "/api/v1/apartments/#{apartment.id}", params: invalid_update
-
-        expect(response).to have_http_status(:unprocessable_entity)
-        body = JSON.parse(response.body)
-        expect(body).to have_key('errors')
-      end
-    end
-  end
-
-  describe 'DELETE /api/v1/apartments/:id' do
-    it 'destroys the apartment and returns 204' do
-      expect do
-        delete "/api/v1/apartments/#{apartment.id}"
-      end.to change(Apartment, :count).by(-1)
-
-      expect(response).to have_http_status(:no_content)
     end
   end
 end

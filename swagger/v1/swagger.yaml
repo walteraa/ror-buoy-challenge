@@ -6,205 +6,493 @@ info:
 paths:
   "/api/v1/accommodations":
     get:
-      summary: List all accommodations
+      summary: Lists accommodations
       tags:
-        - Accommodations
+      - Accommodations
       responses:
-        "200":
+        '200':
           description: accommodations listed
-    post:
-      summary: Create a new accommodation
-      tags:
-        - Accommodations
-      parameters: []
-      responses:
-        "201":
-          description: accommodation created
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                description:
-                  type: string
-                price:
-                  type: number
-                location:
-                  type: string
-              required:
-                - name
-                - price
-                - location
   "/api/v1/accommodations/{id}":
     get:
-      summary: Get a specific accommodation
+      summary: Retrieves an accommodation
       tags:
-        - Accommodations
+      - Accommodations
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
       responses:
-        "200":
+        '200':
           description: accommodation found
-        "404":
+        '404':
           description: accommodation not found
-    patch:
-      summary: Update an accommodation
-      tags:
-        - Accommodations
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: accommodation updated
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                description:
-                  type: string
-                price:
-                  type: number
-                location:
-                  type: string
-    delete:
-      summary: Delete an accommodation
-      tags:
-        - Accommodations
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "204":
-          description: accommodation deleted
-  "/api/v1/accommodations/{accommodation_id}/bookings":
-    get:
-      summary: List bookings for a specific accommodation
-      tags:
-        - Bookings
-      parameters:
-        - name: accommodation_id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: bookings listed
+  "/api/v1/accommodations/{id}/book":
     post:
-      summary: Create booking for an accommodation
+      summary: Books an accommodation
       tags:
-        - Bookings
+      - Accommodations
       parameters:
-        - name: accommodation_id
-          in: path
-          required: true
-          schema:
-            type: string
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
       responses:
-        "201":
-          description: booking created
+        '202':
+          description: booking request created
+        '404':
+          description: accommodation not found
+        '422':
+          description: booking creation fails
       requestBody:
         content:
           application/json:
             schema:
               type: object
               properties:
-                guest_name:
-                  type: string
                 start_date:
                   type: string
                   format: date
                 end_date:
                   type: string
                   format: date
+                guest_name:
+                  type: string
               required:
-                - guest_name
-                - start_date
-                - end_date
+              - start_date
+              - end_date
+              - guest_name
+  "/api/v1/apartments":
+    get:
+      summary: List apartments
+      tags:
+      - Apartments
+      responses:
+        '200':
+          description: apartments found
+    post:
+      summary: Create an apartment
+      tags:
+      - Apartments
+      parameters: []
+      responses:
+        '201':
+          description: apartment created
+        '422':
+          description: invalid request
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                apartment:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    description:
+                      type: string
+                    price:
+                      type: number
+                    location:
+                      type: string
+                    capacity:
+                      type: integer
+                    address:
+                      type: string
+                    amenities_attributes:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                  required:
+                  - name
+                  - price
+                  - location
+                  - capacity
+                  - address
+              required:
+              - apartment
+  "/api/v1/apartments/{id}":
+    parameters:
+    - name: id
+      in: path
+      description: Apartment ID
+      required: true
+      schema:
+        type: integer
+    get:
+      summary: Retrieve an apartment
+      tags:
+      - Apartments
+      responses:
+        '200':
+          description: apartment found
+        '404':
+          description: apartment not found
+    patch:
+      summary: Update an apartment
+      tags:
+      - Apartments
+      parameters: []
+      responses:
+        '200':
+          description: apartment updated
+        '422':
+          description: invalid request
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                apartment:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                  required:
+                  - name
+              required:
+              - apartment
+    delete:
+      summary: Delete an apartment
+      tags:
+      - Apartments
+      responses:
+        '204':
+          description: apartment deleted
+        '404':
+          description: apartment not found
+  "/api/v1/accommodations/{accommodation_id}/bookings":
+    parameters:
+    - name: accommodation_id
+      in: path
+      description: Accommodation ID
+      required: true
+      schema:
+        type: integer
+    get:
+      summary: List all bookings for an accommodation
+      tags:
+      - Bookings
+      responses:
+        '200':
+          description: bookings found
   "/api/v1/bookings":
     get:
       summary: List all bookings
       tags:
-        - Bookings
+      - Bookings
       responses:
-        "200":
-          description: bookings listed
+        '200':
+          description: all bookings returned
   "/api/v1/bookings/{id}":
+    parameters:
+    - name: id
+      in: path
+      description: Booking ID
+      required: true
+      schema:
+        type: integer
     get:
-      summary: Get a booking by ID
+      summary: Retrieve a booking
       tags:
-        - Bookings
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+      - Bookings
       responses:
-        "200":
+        '200':
           description: booking found
-        "404":
+        '404':
           description: booking not found
     patch:
       summary: Update a booking
       tags:
-        - Bookings
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+      - Bookings
+      parameters: []
       responses:
-        "200":
+        '200':
           description: booking updated
+        '422':
+          description: invalid request
       requestBody:
         content:
           application/json:
             schema:
               type: object
               properties:
-                guest_name:
-                  type: string
-                start_date:
-                  type: string
-                  format: date
-                end_date:
-                  type: string
-                  format: date
+                booking:
+                  type: object
+                  properties:
+                    guest_name:
+                      type: string
+                    start_date:
+                      type: string
+                      format: date
+                    end_date:
+                      type: string
+                      format: date
+                  required:
+                  - guest_name
+              required:
+              - booking
     delete:
       summary: Delete a booking
       tags:
-        - Bookings
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+      - Bookings
       responses:
-        "204":
+        '204':
           description: booking deleted
+        '404':
+          description: booking not found
+  "/api/v1/hotels/{hotel_id}/rooms":
+    get:
+      summary: Lists rooms for a hotel
+      tags:
+      - Rooms
+      parameters:
+      - name: hotel_id
+        in: path
+        required: true
+        schema:
+          type: integer
+      - name: page
+        in: query
+        schema:
+          type: integer
+      - name: per_page
+        in: query
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: rooms listed
+        '404':
+          description: hotel not found
+    post:
+      summary: Creates a new room for a hotel
+      tags:
+      - Rooms
+      parameters:
+      - name: hotel_id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '201':
+          description: room created
+        '422':
+          description: invalid room params
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                room:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    description:
+                      type: string
+                    price:
+                      type: number
+                    location:
+                      type: string
+                    capacity:
+                      type: integer
+                    address:
+                      type: string
+                    amenities_attributes:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                  required:
+                  - name
+                  - description
+                  - price
+                  - location
+                  - capacity
+                  - address
+  "/api/v1/hotels/{hotel_id}/rooms/{id}":
+    get:
+      summary: Retrieves a single room
+      tags:
+      - Rooms
+      parameters:
+      - name: hotel_id
+        in: path
+        required: true
+        schema:
+          type: integer
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: room found
+        '404':
+          description: room not found
+    patch:
+      summary: Updates a room
+      tags:
+      - Rooms
+      parameters:
+      - name: hotel_id
+        in: path
+        required: true
+        schema:
+          type: integer
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: room updated
+        '422':
+          description: invalid update params
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                room:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    price:
+                      type: number
+                    amenities_attributes:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+    delete:
+      summary: Deletes a room
+      tags:
+      - Rooms
+      parameters:
+      - name: hotel_id
+        in: path
+        required: true
+        schema:
+          type: integer
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '204':
+          description: room deleted
+        '404':
+          description: room not found
+  "/api/v1/hotels":
+    get:
+      summary: Retrieves paginated hotels
+      tags:
+      - Hotels
+      responses:
+        '200':
+          description: hotels found
+    post:
+      summary: Creates a hotel
+      tags:
+      - Hotels
+      parameters: []
+      responses:
+        '201':
+          description: hotel created
+        '422':
+          description: unprocessable entity
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                hotel:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    address:
+                      type: string
+                    amenities_attributes:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                  required:
+                  - name
+                  - address
+  "/api/v1/hotels/{id}":
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    get:
+      summary: Retrieves a hotel
+      tags:
+      - Hotels
+      responses:
+        '200':
+          description: hotel found
+        '404':
+          description: hotel not found
+    patch:
+      summary: Updates a hotel
+      tags:
+      - Hotels
+      parameters: []
+      responses:
+        '200':
+          description: hotel updated
+        '422':
+          description: unprocessable entity
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                hotel:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    address:
+                      type: string
+    delete:
+      summary: Deletes a hotel
+      tags:
+      - Hotels
+      responses:
+        '204':
+          description: hotel deleted
 servers:
-  - url: http://localhost:3000
-    variables:
-      defaultHost:
-        default: http://localhost:3000
+- url: https://{defaultHost}
+  variables:
+    defaultHost:
+      default: www.example.com

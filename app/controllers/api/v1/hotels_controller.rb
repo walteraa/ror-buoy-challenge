@@ -6,14 +6,15 @@ module Api
       before_action :set_hotel, only: %i[show update destroy]
 
       def index
+        permitted_params = params.permit(amenities: [])
         hotels = Hotel.all
 
         if params[:start_date].present? && params[:end_date].present?
           hotels = hotels.available(params[:start_date], params[:end_date])
         end
 
-        if params[:amenities].present? && params[:amenities].is_a?(Array) && params[:amenities].any?
-          hotels = hotels.with_amenities(params[:amenities])
+        if permitted_params[:amenities].present? && permitted_params[:amenities].is_a?(Array) && params[:amenities].any?
+          hotels = hotels.with_amenities(permitted_params[:amenities])
         end
 
         @hotels = hotels.page(params[:page]).per(params[:per_page] || 10)

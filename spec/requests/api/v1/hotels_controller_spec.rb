@@ -71,10 +71,8 @@ RSpec.describe 'Api::V1::Hotels', type: :request do
           hotel
         end
 
-        let!(:hotel_with_only_wifi) do
-          hotel = create(:hotel)
-          hotel.amenities << wifi
-          hotel
+        let!(:hotel_without_amenity) do
+          create(:hotel)
         end
 
         before do
@@ -86,7 +84,7 @@ RSpec.describe 'Api::V1::Hotels', type: :request do
           hotel_ids = body['hotels'].map { |h| h['id'] }
 
           expect(hotel_ids).to include(hotel_with_wifi_and_pool.id)
-          expect(hotel_ids).not_to include(hotel_with_only_wifi.id)
+          expect(hotel_ids).not_to include(hotel_without_amenity.id)
         end
       end
 

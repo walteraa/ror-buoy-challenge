@@ -23,17 +23,13 @@ class Hotel < ApplicationRecord
 
   scope :with_amenities, lambda { |names|
     hotel_ids_from_hotels = joins(:amenities)
-                            .where(amenities: { name: names })
-                            .group('hotels.id')
-                            .having('COUNT(DISTINCT amenities.id) = ?', names.size)
-                            .select(:id)
+                            .where(amenities: { name: names }).distinct
 
-    hotel_ids_from_rooms = joins(rooms: :amenities)
-                           .where(amenities: { name: names })
-                           .group('hotels.id')
-                           .having('COUNT(DISTINCT amenities.id) = ?', names.size)
-                           .select(:id)
+    hotel_ids_from_accommodations = joins(rooms: :amenities)
+                                    .where(amenities: { name: names })
 
-    where(id: hotel_ids_from_hotels).or(where(id: hotel_ids_from_rooms)).distinct
+    where(id: hotel_ids_from_hotels)
+      .or(where(id: hotel_ids_from_accommodations))
+      .distinct
   }
 end

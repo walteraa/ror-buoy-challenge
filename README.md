@@ -794,7 +794,422 @@ And now if we do the same for the end_date
 }
 ```
 
+#### Extra
 
+The API also has the ability to filter Apartments and Hotels by availability and Amenities
+
+```bash
+❯ curl -s localhost:3000/api/v1/bookings | jq
+{
+  "bookings": [
+    {
+      "id": 1,
+      "accommodation_id": 1,
+      "accommodation_name": "Room 1",
+      "start_date": "2025-09-10",
+      "end_date": "2025-09-12",
+      "guest_name": "John Doe"
+    },
+    {
+      "id": 29,
+      "accommodation_id": 6,
+      "accommodation_name": "Sea View Apartment",
+      "start_date": "2025-09-25",
+      "end_date": "2025-09-30",
+      "guest_name": "John Doe"
+    }
+╰─❯ curl -s localhost:3000/api/v1/bookings | jq
+{
+  "bookings": [
+    {
+      "id": 1,
+      "accommodation_id": 1,
+      "accommodation_name": "Room 1",
+      "start_date": "2025-09-10",
+      "end_date": "2025-09-12",
+      "guest_name": "John Doe"
+    },
+    {
+      "id": 29,
+      "accommodation_id": 6,
+      "accommodation_name": "Sea View Apartment",
+      "start_date": "2025-09-25",
+      "end_date": "2025-09-30",
+      "guest_name": "John Doe"
+    }
+  ]
+}
+╰─❯ curl -s -G localhost:3000/api/v1/apartments \
+        --data-urlencode "start_date=2025-09-15" \
+        --data-urlencode "end_date=2025-09-26" | jq
+{
+  "apartments": [],
+  "meta": {
+    "current_page": 1,
+    "total_pages": 0,
+    "total_count": 0
+  }
+}
+╰─❯ curl -s -G localhost:3000/api/v1/apartments \
+        --data-urlencode "start_date=2025-09-15" \
+        --data-urlencode "end_date=2025-09-23" | jq
+{
+  "apartments": [
+    {
+      "id": 6,
+      "name": "Sea View Apartment",
+      "description": "Furnished apartment with ocean view and pool access.",
+      "price": "420.0",
+      "location": "Main Avenue, Central Beach",
+      "capacity": null,
+      "address": "Main Avenue, 999",
+      "created_at": "2025-09-05T22:34:28.001Z",
+      "updated_at": "2025-09-05T22:34:28.001Z",
+      "amenities": [
+        {
+          "name": "WiFi"
+        },
+        {
+          "name": "Air Conditioning"
+        },
+        {
+          "name": "Pool"
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "current_page": 1,
+    "total_pages": 1,
+    "total_count": 1
+  }
+}
+```
+
+Same for hotels, look at these two bookings
+
+```bash
+❯ curl -s localhost:3000/api/v1/accommodations/78/bookings | jq
+{
+  "bookings": [
+    {
+      "id": 30,
+      "accommodation_id": 78,
+      "accommodation_name": "Crystal Suite",
+      "start_date": "2025-09-10",
+      "end_date": "2025-09-20",
+      "guest_name": "John Doe"
+    }
+  ],
+  "meta": {
+    "current_page": 1,
+    "total_pages": 1,
+    "total_count": 1
+  }
+}
+╰─❯ curl -s localhost:3000/api/v1/accommodations/80/bookings | jq
+{
+  "bookings": [
+    {
+      "id": 31,
+      "accommodation_id": 80,
+      "accommodation_name": "Sunset Room",
+      "start_date": "2025-09-15",
+      "end_date": "2025-09-25",
+      "guest_name": "John Doe"
+    }
+  ],
+  "meta": {
+    "current_page": 1,
+    "total_pages": 1,
+    "total_count": 1
+  }
+}
+```
+
+One is from hotel ID 21 and the other from ID 
+
+```bash
+❯ curl -s localhost:3000/api/v1/hotels/21/rooms | jq
+{
+  "rooms": [
+    {
+      "id": 78,
+      "name": "Crystal Suite",
+      "description": "A luxurious suite with sparkling crystals",
+      "price": null,
+      "location": "2nd floor",
+      "capacity": null,
+      "address": null,
+      "created_at": "2025-09-06T01:10:21.459Z",
+      "updated_at": "2025-09-06T01:10:21.459Z",
+      "amenities": []
+    },
+    {
+      "id": 79,
+      "name": "Moonlight Chamber",
+      "description": "A cozy room illuminated by moonlight",
+      "price": null,
+      "location": "3rd floor",
+      "capacity": null,
+      "address": null,
+      "created_at": "2025-09-06T01:10:21.463Z",
+      "updated_at": "2025-09-06T01:10:21.463Z",
+      "amenities": []
+    }
+  ],
+  "meta": {
+    "current_page": 1,
+    "total_pages": 1,
+    "total_count": 2
+  }
+}
+╰─❯ curl -s localhost:3000/api/v1/hotels/22/rooms | jq
+{
+  "rooms": [
+    {
+      "id": 80,
+      "name": "Sunset Room",
+      "description": "A single room with a view of the sunset",
+      "price": null,
+      "location": "1st floor",
+      "capacity": null,
+      "address": null,
+      "created_at": "2025-09-06T01:10:50.715Z",
+      "updated_at": "2025-09-06T01:10:50.715Z",
+      "amenities": []
+    }
+  ],
+  "meta": {
+    "current_page": 1,
+    "total_pages": 1,
+    "total_count": 1
+  }
+}
+
+```
+
+Let's try to filter using dates matching the overlaping 2 of the 3 rooms(one of them doesnt have schedules)
+
+```bash
+❯ curl -s -G localhost:3000/api/v1/hotels \
+        --data-urlencode "start_date=2025-09-15" \
+        --data-urlencode "end_date=2025-09-23" | jq
+{
+  "hotels": [
+    {
+      "id": 1,
+      "name": "Hotel Paradise",
+      "address": "123 Ocean Drive",
+      "created_at": "2025-09-05T22:31:12.701Z",
+      "updated_at": "2025-09-05T22:31:12.701Z",
+      "amenities": [
+        {
+          "name": "Pool"
+        },
+        {
+          "name": "Gym"
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "name": "The Enchanted Inn",
+      "address": null,
+      "created_at": "2025-09-06T01:10:21.454Z",
+      "updated_at": "2025-09-06T01:10:21.454Z",
+      "amenities": []
+    }
+  ],
+  "meta": {
+    "current_page": 1,
+    "total_pages": 1,
+    "total_count": 2
+  }
+}
+```
+
+Only the hotel 21 is shown in the list above, let's use another query
+
+```bash
+❯ curl -s -G localhost:3000/api/v1/hotels \
+        --data-urlencode "start_date=2025-09-29" \
+        --data-urlencode "end_date=2025-09-30" | jq
+{
+  "hotels": [
+    {
+      "id": 1,
+      "name": "Hotel Paradise",
+      "address": "123 Ocean Drive",
+      "created_at": "2025-09-05T22:31:12.701Z",
+      "updated_at": "2025-09-05T22:31:12.701Z",
+      "amenities": [
+        {
+          "name": "Pool"
+        },
+        {
+          "name": "Gym"
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "name": "The Enchanted Inn",
+      "address": null,
+      "created_at": "2025-09-06T01:10:21.454Z",
+      "updated_at": "2025-09-06T01:10:21.454Z",
+      "amenities": []
+    },
+    {
+      "id": 22,
+      "name": "Dragonfly Retreat",
+      "address": null,
+      "created_at": "2025-09-06T01:10:50.707Z",
+      "updated_at": "2025-09-06T01:10:50.707Z",
+      "amenities": []
+    }
+  ],
+  "meta": {
+    "current_page": 1,
+    "total_pages": 1,
+    "total_count": 3
+  }
+}
+
+```
+
+Both of them is shown.
+
+We are also able to filter by amenities in both of the accommodation types
+
+From room:
+```bash
+❯ curl -s "http://localhost:3000/api/v1/hotels?amenities[]=Air+Conditioning" | jq
+{
+  "hotels": [
+    {
+      "id": 1,
+      "name": "Hotel Paradise",
+      "address": "123 Ocean Drive",
+      "created_at": "2025-09-05T22:31:12.701Z",
+      "updated_at": "2025-09-05T22:31:12.701Z",
+      "amenities": [
+        {
+          "name": "Pool"
+        },
+        {
+          "name": "Gym"
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "current_page": 1,
+    "total_pages": 1,
+    "total_count": 1
+  }
+}
+
+❯ curl -s "http://localhost:3000/api/v1/hotels/1/rooms" | jq
+{
+  "rooms": [
+    {
+      "id": 1,
+      "name": "Room 1",
+      "description": "Sea view, king bed",
+      "price": "150.0",
+      "location": "First floor",
+      "capacity": 2,
+      "address": "Room 1, First floor",
+      "created_at": "2025-09-05T22:31:12.703Z",
+      "updated_at": "2025-09-05T22:31:12.703Z",
+      "amenities": [
+        {
+          "name": "WiFi"
+        },
+        {
+          "name": "Air Conditioning"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Room 2",
+      "description": "Garden view, queen bed",
+      "price": "140.0",
+      "location": "Second floor",
+      "capacity": 2,
+      "address": "Room 2, Second floor",
+      "created_at": "2025-09-05T22:31:12.706Z",
+      "updated_at": "2025-09-05T22:31:12.706Z",
+      "amenities": [
+        {
+          "name": "WiFi"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Room 3",
+      "description": "City view, two single beds",
+      "price": "130.0",
+      "location": "Third floor",
+      "capacity": 2,
+      "address": "Room 3, Third floor",
+      "created_at": "2025-09-05T22:31:12.708Z",
+      "updated_at": "2025-09-05T22:31:12.708Z",
+      "amenities": []
+    }
+  ],
+  "meta": {
+    "current_page": 1,
+    "total_pages": 1,
+    "total_count": 7
+  }
+}
+```
+
+from hotel directly:
+
+```bash
+❯ curl -s "http://localhost:3000/api/v1/hotels?amenities[]=Pool" | jq
+{
+  "hotels": [
+    {
+      "id": 1,
+      "name": "Hotel Paradise",
+      "address": "123 Ocean Drive",
+      "created_at": "2025-09-05T22:31:12.701Z",
+      "updated_at": "2025-09-05T22:31:12.701Z",
+      "amenities": [
+        {
+          "name": "Pool"
+        },
+        {
+          "name": "Gym"
+        }
+      ]
+    },
+    {
+      "id": 26,
+      "name": "Dragonfly Retreat",
+      "address": null,
+      "created_at": "2025-09-06T02:06:14.711Z",
+      "updated_at": "2025-09-06T02:06:14.711Z",
+      "amenities": [
+        {
+          "name": "Pool"
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "current_page": 1,
+    "total_pages": 1,
+    "total_count": 2
+  }
+}
+```
 
 #### Running tests
 

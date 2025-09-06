@@ -14,6 +14,9 @@ RSpec.describe 'Api::V1::Bookings', type: :request do
       tags 'Bookings'
       produces 'application/json'
 
+      parameter name: :page, in: :query, type: :integer, description: 'Page number', required: false
+      parameter name: :per_page, in: :query, type: :integer, description: 'Results per page', required: false
+
       response '200', 'bookings found' do
         let(:accommodation_id) { accommodation.id }
 

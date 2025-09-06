@@ -16,7 +16,7 @@ FactoryBot.define do
     end
 
     after(:create) do |room, evaluator|
-      create_list(:amenity, evaluator.amenities_count, rooms: [room]) if room.amenities.empty?
+      create_list(:amenity, evaluator.amenities_count, accommodations: [room]) if room.amenities.empty?
     end
   end
 end

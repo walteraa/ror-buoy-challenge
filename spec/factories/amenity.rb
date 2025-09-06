@@ -2,6 +2,6 @@
 
 FactoryBot.define do
   factory :amenity do
-    name { 'WiFi' }
+    sequence(:name) { |n| "Amenity #{n}" }
   end
 end

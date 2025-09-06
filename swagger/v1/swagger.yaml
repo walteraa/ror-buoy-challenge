@@ -69,9 +69,45 @@ paths:
       summary: List apartments
       tags:
       - Apartments
+      parameters:
+      - name: page
+        in: query
+        description: Page number
+        required: false
+        schema:
+          type: integer
+      - name: per_page
+        in: query
+        description: Results per page
+        required: false
+        schema:
+          type: integer
+      - name: start_date
+        in: query
+        format: date
+        description: Filter by availability start date
+        required: false
+        schema:
+          type: string
+      - name: end_date
+        in: query
+        format: date
+        description: Filter by availability end date
+        required: false
+        schema:
+          type: string
+      - name: amenities
+        in: query
+        collectionFormat: multi
+        items:
+          type: string
+        description: Filter by amenities (e.g., amenities[]=WiFi&amenities[]=Pool)
+        required: false
+        schema:
+          type: array
       responses:
         '200':
-          description: apartments found
+          description: apartments filtered by availability AND amenities
     post:
       summary: Create an apartment
       tags:
@@ -181,6 +217,19 @@ paths:
       summary: List all bookings for an accommodation
       tags:
       - Bookings
+      parameters:
+      - name: page
+        in: query
+        description: Page number
+        required: false
+        schema:
+          type: integer
+      - name: per_page
+        in: query
+        description: Results per page
+        required: false
+        schema:
+          type: integer
       responses:
         '200':
           description: bookings found
@@ -409,9 +458,45 @@ paths:
       summary: Retrieves paginated hotels
       tags:
       - Hotels
+      parameters:
+      - name: page
+        in: query
+        description: Page number
+        required: false
+        schema:
+          type: integer
+      - name: per_page
+        in: query
+        description: Results per page
+        required: false
+        schema:
+          type: integer
+      - name: start_date
+        in: query
+        format: date
+        description: Filter by availability start date
+        required: false
+        schema:
+          type: string
+      - name: end_date
+        in: query
+        format: date
+        description: Filter by availability end date
+        required: false
+        schema:
+          type: string
+      - name: amenities
+        in: query
+        collectionFormat: multi
+        items:
+          type: string
+        description: Filter by amenities (e.g., amenities[]=WiFi&amenities[]=Pool)
+        required: false
+        schema:
+          type: array
       responses:
         '200':
-          description: hotels found
+          description: hotels filtered by availability AND amenities
     post:
       summary: Creates a hotel
       tags:

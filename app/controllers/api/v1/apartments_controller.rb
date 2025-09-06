@@ -6,7 +6,18 @@ module Api
       before_action :set_apartment, only: %i[show update destroy]
 
       def index
-        @apartments = Apartment.page(params[:page]).per(params[:per_page] || 10)
+        apartments = Apartment.all
+
+        if params[:start_date].present? && params[:end_date].present?
+          apartments = apartments.available(params[:start_date], params[:end_date])
+        end
+
+        if params[:amenities].present? && params[:amenities].is_a?(Array) && params[:amenities].any?
+          apartments = apartments.with_amenities(params[:amenities])
+
+        end
+
+        @apartments = apartments.page(params[:page]).per(params[:per_page] || 10)
         render json: @apartments, each_serializer: ::V1::ApartmentSerializer, meta: pagination_meta(@apartments)
       end
 

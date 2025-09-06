@@ -11,11 +11,192 @@ RSpec.describe 'Api::V1::Apartments', type: :request do
       tags 'Apartments'
       produces 'application/json'
 
+      parameter name: :page, in: :query, type: :integer, description: 'Page number', required: false
+      parameter name: :per_page, in: :query, type: :integer, description: 'Results per page', required: false
+
+      parameter name: :start_date, in: :query, type: :string, format: :date,
+                description: 'Filter by availability start date', required: false
+      parameter name: :end_date, in: :query, type: :string, format: :date,
+                description: 'Filter by availability end date', required: false
+
+      parameter name: :amenities, in: :query, type: :array, collectionFormat: :multi,
+                items: { type: :string }, description: 'Filter by amenities (e.g., amenities[]=WiFi&amenities[]=Pool)', required: false
+
       response '200', 'apartments found' do
         run_test! do
           body = JSON.parse(response.body)
           expect(body['apartments'].size).to eq(3)
           expect(body).to have_key('meta')
+        end
+      end
+
+      response '200', 'apartments filtered by availability' do
+        let!(:available_apartment) do
+          apartment = create(:apartment)
+          create(:apartment)
+          apartment
+        end
+
+        let!(:booked_apartment) do
+          apartment = create(:apartment)
+          create(:booking, accommodation: apartment, start_date: '2025-09-10', end_date: '2025-09-20')
+          apartment
+        end
+
+        before do
+          get '/api/v1/apartments', params: { start_date: '2025-09-15', end_date: '2025-09-16' }
+        end
+
+        it 'returns only apartments with availability' do
+          body = JSON.parse(response.body)
+          apartment_ids = body['apartments'].map { |a| a['id'] }
+
+          expect(apartment_ids).to include(available_apartment.id)
+          expect(apartment_ids).not_to include(booked_apartment.id)
+        end
+      end
+
+      response '200', 'apartments filtered by amenities' do
+        let!(:wifi) { create(:amenity, name: 'WiFi') }
+        let!(:pool) { create(:amenity, name: 'Pool') }
+
+        let!(:apartment_with_wifi_and_pool) do
+          apartment = create(:apartment)
+          apartment.amenities << wifi
+          apartment.amenities << pool
+          apartment
+        end
+
+        let!(:apartment_with_only_wifi) do
+          apartment = create(:apartment)
+          apartment.amenities << wifi
+          apartment
+        end
+
+        before do
+          get '/api/v1/apartments', params: { amenities: %w[WiFi Pool] }
+        end
+
+        it 'returns only apartments that have all requested amenities' do
+          body = JSON.parse(response.body)
+          apartment_ids = body['apartments'].map { |a| a['id'] }
+
+          expect(apartment_ids).to include(apartment_with_wifi_and_pool.id)
+          expect(apartment_ids).not_to include(apartment_with_only_wifi.id)
+        end
+      end
+
+      response '200', 'apartments filtered by availability AND amenities' do
+        let!(:wifi) { create(:amenity, name: 'WiFi') }
+
+        let!(:available_apartment_with_wifi) do
+          apartment = create(:apartment)
+          apartment.amenities << wifi
+          apartment
+        end
+
+        let!(:booked_apartment_with_wifi) do
+          apartment = create(:apartment)
+          apartment.amenities << wifi
+          create(:booking, accommodation: apartment, start_date: '2025-09-10', end_date: '2025-09-20')
+          apartment
+        end
+
+        before do
+          get '/api/v1/apartments', params: { start_date: '2025-09-15', end_date: '2025-09-16', amenities: ['WiFi'] }
+        end
+
+        it 'returns only apartments that match both filters' do
+          body = JSON.parse(response.body)
+          apartment_ids = body['apartments'].map { |a| a['id'] }
+
+          expect(apartment_ids).to include(available_apartment_with_wifi.id)
+          expect(apartment_ids).not_to include(booked_apartment_with_wifi.id)
+        end
+      end
+      response '200', 'apartments filtered by availability' do
+        let!(:available_apartment) { create(:apartment) }
+        let!(:booked_apartment) do
+          apartment = create(:apartment)
+          create(:booking, accommodation: apartment,
+                           start_date: '2025-09-10', end_date: '2025-09-20')
+          apartment
+        end
+
+        before do
+          get '/api/v1/apartments', params: { start_date: '2025-09-15', end_date: '2025-09-16' }
+        end
+
+        it 'returns only apartments with availability' do
+          body = JSON.parse(response.body)
+          apartment_ids = body['apartments'].map { |a| a['id'] }
+
+          expect(apartment_ids).to include(available_apartment.id)
+          expect(apartment_ids).not_to include(booked_apartment.id)
+        end
+      end
+
+      response '200', 'apartments filtered by amenities' do
+        let!(:wifi) { create(:amenity, name: 'WiFi') }
+        let!(:pool) { create(:amenity, name: 'Pool') }
+
+        let!(:apartment_with_wifi_and_pool) do
+          apartment = create(:apartment)
+          apartment.amenities << wifi
+          apartment.amenities << pool
+          apartment
+        end
+
+        let!(:apartment_with_only_wifi) do
+          apartment = create(:apartment)
+          apartment.amenities << wifi
+          apartment
+        end
+
+        before do
+          get '/api/v1/apartments', params: { amenities: %w[WiFi Pool] }
+        end
+
+        it 'returns only apartments that have all requested amenities' do
+          body = JSON.parse(response.body)
+          apartment_ids = body['apartments'].map { |a| a['id'] }
+
+          expect(apartment_ids).to include(apartment_with_wifi_and_pool.id)
+          expect(apartment_ids).not_to include(apartment_with_only_wifi.id)
+        end
+      end
+
+      response '200', 'apartments filtered by availability AND amenities' do
+        let!(:wifi) { create(:amenity, name: 'WiFi') }
+
+        let!(:available_apartment_with_wifi) do
+          apartment = create(:apartment)
+          apartment.amenities << wifi
+          apartment
+        end
+
+        let!(:booked_apartment_with_wifi) do
+          apartment = create(:apartment)
+          apartment.amenities << wifi
+          create(:booking, accommodation: apartment,
+                           start_date: '2025-09-10', end_date: '2025-09-20')
+          apartment
+        end
+
+        before do
+          get '/api/v1/apartments', params: {
+            start_date: '2025-09-15',
+            end_date: '2025-09-16',
+            amenities: ['WiFi']
+          }
+        end
+
+        it 'returns only apartments that match both filters' do
+          body = JSON.parse(response.body)
+          apartment_ids = body['apartments'].map { |a| a['id'] }
+
+          expect(apartment_ids).to include(available_apartment_with_wifi.id)
+          expect(apartment_ids).not_to include(booked_apartment_with_wifi.id)
         end
       end
     end

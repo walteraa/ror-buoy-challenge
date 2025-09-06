@@ -6,7 +6,17 @@ module Api
       before_action :set_hotel, only: %i[show update destroy]
 
       def index
-        @hotels = Hotel.page(params[:page]).per(params[:per_page] || 10)
+        hotels = Hotel.all
+
+        if params[:start_date].present? && params[:end_date].present?
+          hotels = hotels.available(params[:start_date], params[:end_date])
+        end
+
+        if params[:amenities].present? && params[:amenities].is_a?(Array) && params[:amenities].any?
+          hotels = hotels.with_amenities(params[:amenities])
+        end
+
+        @hotels = hotels.page(params[:page]).per(params[:per_page] || 10)
         render json: @hotels, each_serializer: ::V1::HotelSerializer, meta: pagination_meta(@hotels)
       end
 

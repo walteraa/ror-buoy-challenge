@@ -17,6 +17,7 @@ Rails.application.routes.draw do
       resources :accommodations do
         member do
           post :book
+          get :availability
         end
         resources :bookings, only: %i[index create]
       end

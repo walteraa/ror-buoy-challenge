@@ -3,12 +3,11 @@
 puts 'Seeding data...'
 
 3.times do |i|
-  Accommodation.create!(
+  Apartment.create!(
     name: "Accommodation #{i + 1}",
     description: "Sample accommodation #{i + 1}",
     price: 150.00 + i * 20,
-    location: "Region #{i + 1}"
-    type: "apartment"
+    location: "Region #{i + 1}",
   )
 end
 

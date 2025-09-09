@@ -102,4 +102,49 @@ RSpec.describe 'Accommodations API', type: :request do
       end
     end
   end
+
+  path '/api/v1/accommodations/{id}/availability' do
+    get 'Gets next available date for an accommodation' do
+      tags 'Accommodations'
+      produces 'application/json'
+      parameter name: :id, in: :path, type: :integer
+      parameter name: :from_date, in: :query, type: :string, format: :date, description: 'Start searching from this date'
+
+      response '200', 'next available date returned' do
+        let(:id) { accommodation.id }
+        let(:from_date) { '2025-09-09' }
+
+        before do
+          create(:booking, accommodation: accommodation, start_date: '2025-09-10', end_date: '2025-09-12')
+        end
+
+        run_test! do
+          expect(response).to have_http_status(:ok)
+          body = JSON.parse(response.body)
+          expect(body['accommodation_id']).to eq(accommodation.id)
+          expect(body).to have_key('next_available')
+        end
+      end
+
+      response '400', 'invalid or missing from_date' do
+        let(:id) { accommodation.id }
+        let(:from_date) { 'invalid-date' }
+
+        run_test! do
+          expect(response).to have_http_status(:bad_request)
+          body = JSON.parse(response.body)
+          expect(body).to include('error' => 'Invalid or missing from_date')
+        end
+      end
+
+      response '404', 'accommodation not found' do
+        let(:id) { 0 }
+        let(:from_date) { '2025-09-09' }
+
+        run_test! do
+          expect(response).to have_http_status(:not_found)
+        end
+      end
+    end
+  end
 end

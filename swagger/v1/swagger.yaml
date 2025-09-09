@@ -64,6 +64,30 @@ paths:
               - start_date
               - end_date
               - guest_name
+  "/api/v1/accommodations/{id}/availability":
+    get:
+      summary: Gets next available date for an accommodation
+      tags:
+      - Accommodations
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      - name: from_date
+        in: query
+        format: date
+        description: Start searching from this date
+        schema:
+          type: string
+      responses:
+        '200':
+          description: next available date returned
+        '400':
+          description: invalid or missing from_date
+        '404':
+          description: accommodation not found
   "/api/v1/apartments":
     get:
       summary: List apartments
